@@ -21,93 +21,44 @@ def log(text):
 # ====================
 #  TOY DATA GENERATOR
 # ====================
-class GerFromTwetter(object):
-    def __init__(self, max_lengs=0):
-        self.max_lengs=max_lengs
-        self.data = []
-        self.labels = []
-        self.seqlen = []
-
-    def get_word_list(words_appearance, tweet_count):
-        if tweet_count <= 1:
-            return list(words_appearance.keys())
-
-        white_list = []
-        black_list = []
-        for word, app_count in words_appearance.items():
-            probability = float(app_count) / tweet_count
-            one_app = 1 / tweet_count
-            if probability > one_app and probability < 0.7:
-                white_list.append(word)
-            else:
-                log("black : " + word + " : " + str(probability))
-
-        return white_list
-
-    def count_words(tweets):
-        tweets_words_count = []
-        words_appearance = {}
-
-        for tweet in tweets:
-            words_count = self.get_word_count(tweet)
-            tweets_words_count.append(words_count)
-            for word_count in words_count:
-                words_appearance.setdefault(word_count.word, 0)
-                words_appearance[word_count.word] += 1
-        return words_appearance, tweets_words_count
-
-        word_list = get_word_list(words_appearance, len(tweets))
-        write_to_file("words.txt", word_list, tweets_words_count)
-
-    def write_to_file(file_name, word_list, tweets_words_count):
-        log("write file")
-        log("words : %s" % len(word_list))
-        log("tweets : %s" % len(tweets_words_count))
-
-        with open(file_name,'w') as file:
-            file.write('tweets')
-            for word in word_list:
-                file.write('\t%s' % word)
-                file.write('\n')
-
-                for word_count in tweets_words_count:
-                    idx += 1
-                    file.write(idx)
-                    if word in word_count:
-                        file.write('\t%d' % word_count[word])
-                    else:
-                        file.write('\t0')
-
-                file.write('\n')
-
 class TextUtils(object):
-    def __init__(self, config):
-        self.upper_boundary_probability = 0.7
-        self.lower_boundary_count = 1
+    def __init__(self, max_words_amount = 0.0):
+        self.max_words_amount = max_words_amount
+        self.lower_boundary_count = 2
+        self.upper_boundary_probability = 0.6
+        self.min_chars = 3
 
-    def count_words(self, texts):
-        words_count_by_text = []
-        words_appearance = {}
+    def count_meaningful_words(self, texts):
+        word_appearance, text_word_count = self._count_words_many(texts)
+        word_list = self._get_word_list(word_appearance, len(texts))
+
+        return self._create_matrix(text_word_count, word_list)
+
+    def _create_matrix(self, rows, column_names):
+        matrix = []
+        for row in rows:
+            row_dict = {}
+            for column_name in column_names:
+                row_dict[column_name] = row[column_name] if column_name in row else 0
+            matrix.append(row_dict)
+        return matrix
+
+    def _count_words_many(self, texts):
+        word_count_by_text = []
+        word_appearance = {}
 
         for text in texts:
-            words_count = self.get_words_count(text)
-            words_count_by_text.append(words_count)
+            text_word_count = self._count_words(text)
+            word_count_by_text.append(text_word_count)
 
-            for word_count in words_count:
-                words_appearance.setdefault(word_count.word, 0)
-                words_appearance[word_count.word] += 1
-        return words_appearance, tweets_words_count
+            for word, count in text_word_couna.keys():
+                word_appearance.setdefault(word, 0)
+                word_appearance[word] += 1
 
-        word_list = get_word_list(words_appearance, len(tweets))
-        write_to_file("words.txt", word_list, tweets_words_count)
+        return words_appearance, text_word_count
 
-    def get_words(self, text):
-        txt = re.compile(r'<[^>]+>').sub('', text)
-        words = re.compile(r'[^a-z^a-z]+').split(txt)
-        return list(filter(one, map(str.lower, words)))
-
-    def get_words_count(self, text):
-        words = self.get_words(text)
+    def _count_words(self, text):
+        words = self._get_words(text)
 
         result = {}
         for word in words:
@@ -116,44 +67,35 @@ class TextUtils(object):
 
         return result
 
-    def get_word_list(self, words_appearance, tweet_count):
-        if tweet_count <= 1:
+    def _get_words(self, text):
+        txt = re.compile(r'<[^>]+>').sub('', text)
+        words = re.compile(r'[^a-z^a-z]+').split(txt)
+        return list(filter(one, map(str.lower, words)))
+
+    def _word_appearance_check(self, texts_count):
+        probability = float(app_count) / texts_count
+        lower_boundary_probability = self.lower_boundary_count / texts_count
+        upper_boundary_probability = self.upper_boundary_probability
+
+        return (probability > lower_boundary_probability
+                and probability < upper_boundary_probability)
+
+    def _word_chars_check(self, word):
+        return len(word) >= self.min_chars
+
+    def _get_word_list(self, words_appearance, texts_count):
+        if texts_count <= 1:
             return list(words_appearance.keys())
 
         white_list = []
         black_list = []
         for word, app_count in words_appearance.items():
-            probability = float(app_count) / tweet_count
-            one_app = 1 / tweet_count
-            if probability > one_app and probability < 0.7:
+            if self._word_appearance_check(app_count, texts_count) and self._word_chars_check(word):
                 white_list.append(word)
             else:
-                log("black : " + word + " : " + str(probability))
+                log("black : " + word + " : " + str(probability) + ", from:" + texts_count)
 
         return white_list
-
-
-    def write_to_file(file_name, word_list, tweets_words_count):
-        log("write file")
-        log("words : %s" % len(word_list))
-        log("tweets : %s" % len(tweets_words_count))
-
-        with open(file_name,'w') as file:
-            file.write('tweets')
-            for word in word_list:
-                file.write('\t%s' % word)
-                file.write('\n')
-
-                for word_count in tweets_words_count:
-                    idx += 1
-                    file.write(idx)
-                    if word in word_count:
-                        file.write('\t%d' % word_count[word])
-                    else:
-                        file.write('\t0')
-
-                file.write('\n')
-
 
 
 class NeuralNetwork(object):
@@ -201,44 +143,35 @@ biases = {
     'out': tf.Variable(tf.random_normal([n_classes]))
 }
 
-
-
-class GetSequenceData(object):
-    def read_data(self, file_name):
+class DataProvider(object):
+    def _read(self):
         with open(file_name, 'r') as file:
-            tweets = file.readlines()
+            lines = file.readlines()
             idx = 0
-            data = []
+            texts = []
             labels = []
-            test_tweets = tweets[:int(len(lines) * 0.7)]
-            train_tweets = tweets[int(len(lines) * 0.7) + 1:]
-            for tweet in train_tweets if self.trainset else test_tweets:
-                tweet_with_lable = tweet.strip().split('\t')
+            if self.first:
+                lines = lines[0:int(len(lines) * self.amount) - 1]
+            else:
+                liens = lines[int(len(lines) * self.amount):0]
 
+            for line in lines:
+                text_with_lable = line.strip().split('\t')
 
-                data.append(map(lambda x: [ord(x)], p[0]))
+                texts.append(text_with_lable[0].strip())
                 label = int(p[1] == "positive")
                 labels.append([label, abs(label - 1)])
-        return data, labels
+        return texts, labels
 
 
-    def __init__(self, trainset=True, max_lengs=0):
-        self.batch_id = 0
-        self.trainset = trainset
+    def __init__(self, first=True, amount=1.0):
         self.data = []
         self.labels = []
-        self.seqlen = []
-        self.max_lengs = max_lengs
-        tweets, labels = self.read_data("Sentiment140.tenPercent.sample.tweets.tsv")
-        tweets_count = len(tweets)
-        for idx in range(0, tweets_count):
-            tweet = tweets[idx]
-            seqlen = len(tweet)
-            self.seqlen.append(seqlen)
-            line += [[0.] for i in range(self.max_lengs - seqlen)]
-            lable = labels[idx]
-            self.data.append(line)
-            self.labels.append(lable)
+        self.batch_id = 0
+        self.first = first
+        self.amount = amount
+        self.file_name = "Sentiment140.tenPercent.sample.tweets.tsv"
+        self.data, self.labels = self._read()
 
     def next(self, batch_size):
         """ Return a batch of data. When dataset end is reached, start over.
@@ -247,9 +180,8 @@ class GetSequenceData(object):
             self.batch_id = 0
         batch_data = (self.data[self.batch_id:min(self.batch_id + batch_size, len(self.data))])
         batch_labels = (self.labels[self.batch_id:min(self.batch_id + batch_size, len(self.data))])
-        batch_seqlen = (self.seqlen[self.batch_id:min(self.batch_id + batch_size, len(self.data))])
         self.batch_id = min(self.batch_id + batch_size, len(self.data))
-        return batch_data, batch_labels, batch_seqlen
+        return batch_data, batch_labels
 
 
 # ==========
