@@ -1,41 +1,37 @@
+'''
+A Reccurent Neural Network (LSTM) implementation example using TensorFlow library.
+This example is using the MNIST database of handwritten digits (http://yann.lecun.com/exdb/mnist/)
+Long Short Term Memory paper: http://deeplearning.cs.cmu.edu/pdfs/Hochreiter97_lstm.pdf
+
+Author: Aymeric Damien
+Project: https://github.com/aymericdamien/TensorFlow-Examples/
+'''
+
 import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
 import numpy as np
-from dataproviders import TwetterDataProvider
 
-trainset_provider = TwetterDataProvider(amount=0.5)
-trainset_provider.fetch_data()
+# Import MINST data
+from tensorflow.examples.tutorials.mnist import input_data
+mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
-testset_provider = TwetterDataProvider(words_list=trainset_provider.words_list, train=False, amount=0.1)
-testset_provider.fetch_data()
+'''
+To classify images using a reccurent neural network, we consider every image
+row as a sequence of pixels. Because MNIST image shape is 28*28px, we will then
+handle 28 sequences of 28 steps for every sample.
+'''
 
-class RecurrentNN:
-    def __init__(self, config):
-        self.learning_rate = config.get("learning_rate", 0.001)
-        self.training_iters = config.get("training_iters", 1000000)
-        self.display_step = config.get("display_step", 10)
-        self.batch_size = config.get("batch_size", 128)
-
-        self.n_inputs = config["n_input"]
-        self.n_steps = config["n_steps"]
-        self.n_layers = config["n_layers"]
-        self.n_hidden = config["n_hidden"]
-        self.n_classes = config["n_classes"]
-
-    def traine(self, ):
-        self.n_inputs = config.get("n_input", )
-
+# Parameters
 learning_rate = 0.001
-training_iters = 1000000
-display_step = 10
+training_iters = 100000
 batch_size = 128
+display_step = 10
 
 # Network Parameters
-n_input = len(trainset_provider.words_list)
-n_steps = 1 # timesteps
+n_input = 28 # MNIST data input (img shape: 28*28)
+n_steps = 28 # timesteps
 n_hidden = 128 # hidden layer num of features
-n_classes = 2
-n_layers = 1
+n_classes = 10 # MNIST total classes (0-9 digits)
 
 # tf Graph input
 x = tf.placeholder("float", [None, n_steps, n_input])
@@ -63,10 +59,11 @@ def RNN(x, weights, biases):
     # Split to get a list of 'n_steps' tensors of shape (batch_size, n_input)
     x = tf.split(0, n_steps, x)
 
-    cell = rnn_cell.BasicLSTMCell(n_hidden, forget_bias=1.0)
-    multi_cell = rnn_cell.MultiRNNCell([cell] * n_layers)
+    # Define a lstm cell with tensorflow
+    lstm_cell = rnn_cell.BasicLSTMCell(n_hidden, forget_bias=1.0)
 
-    outputs, states = rnn.rnn(multi_cell, x, dtype=tf.float32)
+    # Get lstm cell output
+    outputs, states = rnn.rnn(lstm_cell, x, dtype=tf.float32)
 
     # Linear activation, using rnn inner loop last output
     return tf.matmul(outputs[-1], weights['out']) + biases['out']
@@ -90,8 +87,11 @@ with tf.Session() as sess:
     step = 1
     # Keep training until reach max iterations
     while step * batch_size < training_iters:
-        batch_x, batch_y = trainset_provider.next(batch_size)
-        batch_x = np.reshape(batch_x, (batch_size, n_steps, n_input))
+        batch_x, batch_y = mnist.train.next_batch(batch_size)
+        # Reshape data to get 28 seq of 28 elements
+        print(np.shape(batch_x))
+        batch_x = batch_x.reshape((batch_size, n_steps, n_input))
+        print(np.shape(batch_x))
         # Run optimization op (backprop)
         sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
         if step % display_step == 0:
@@ -102,19 +102,12 @@ with tf.Session() as sess:
             print "Iter " + str(step*batch_size) + ", Minibatch Loss= " + \
                   "{:.6f}".format(loss) + ", Training Accuracy= " + \
                   "{:.5f}".format(acc)
-            if acc > 0.99 and loss < 0.05:
-                break
-
         step += 1
     print "Optimization Finished!"
 
+    # Calculate accuracy for 128 mnist test images
     test_len = 128
-    acc = []
-    for idx in range(0, int(len(testset_provider.data) / test_len)):
-        test_data, test_label = testset_provider.next(test_len)
-        test_data = np.reshape(test_data, (test_len, n_steps, n_input))
-        acc.append(sess.run(accuracy, feed_dict={x: test_data, y: test_label}))
-        print "Testing Accuracy:", acc[len(acc) - 1]
-
-    print "Avg Accuracy:", np.mean(acc)
-
+    test_data = mnist.test.images[:test_len].reshape((-1, n_steps, n_input))
+    test_label = mnist.test.labels[:test_len]
+    print "Testing Accuracy:", \
+        sess.run(accuracy, feed_dict={x: test_data, y: test_label})

@@ -2,7 +2,6 @@ import numpy as np
 import re
 import collections
 
-
 class MeaningfulWordsFilter():
     def __init__(self,
             min_word_length=3,
@@ -52,7 +51,7 @@ class TextUtils(object):
                 if column_name in column_name_ids:
                     matrix[idx][column_name_ids[column_name]]=[value]
             idx += 1
-        return matrix.tolist()
+        return matrix
 
     def _count_words_many(self, texts):
         word_count_by_text = []
@@ -112,8 +111,32 @@ class TwetterDataProvider(object):
         """
         if self.batch_id == len(self.data):
             self.batch_id = 0
+
         batch_data = (self.data[self.batch_id:min(self.batch_id + batch_size, len(self.data))])
         batch_labels = (self.labels[self.batch_id:min(self.batch_id + batch_size, len(self.data))])
         self.batch_id = min(self.batch_id + batch_size, len(self.data))
-        return batch_data, batch_labels
 
+        data_length = len(batch_data)
+        if data_length < batch_size:
+            additional_data, additional_labels = self.next(batch_size - data_length)
+            batch_data = np.concatenate((batch_data, additional_data), axis=0)
+            batch_labels = np.concatenate((batch_labels, additional_labels), axis=0)
+
+        return batch_data, batch_labels
+'''
+d = TwetterDataProvider(amount=0.01)
+d.fetch_data()
+print "train"
+for idx in range(0, 10):
+    x, y = d.next(128)
+    print np.shape(x)
+    print np.shape(y)
+
+t = TwetterDataProvider(words_list=d.words_list, train=False, amount=0.01)
+t.fetch_data()
+print "test"
+for idx in range(0, 10):
+    x, y = t.next(128)
+    print np.shape(x)
+    print np.shape(y)
+'''
