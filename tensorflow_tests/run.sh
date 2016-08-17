@@ -1,5 +1,4 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-docker run -it -v "$DIR/scripts:/scripts" --name tansor tansor
-
+nvidia-docker run -it -v "$DIR/scripts:/scripts" --name tansor tensor-gpu 

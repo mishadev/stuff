@@ -12,65 +12,176 @@ Project: https://github.com/aymericdamien/TensorFlow-Examples/
 import tensorflow as tf
 import random
 
+def log(text):
+    print ("="*20)
+    print (text)
+    print ("="*20)
+
 
 # ====================
 #  TOY DATA GENERATOR
 # ====================
-class ToySequenceData(object):
-    """ Generate sequence of data with dynamic length.
-    This class generate samples for training:
-    - Class 0: linear sequences (i.e. [0, 1, 2, 3,...])
-    - Class 1: random sequences (i.e. [1, 3, 10, 7,...])
+class TextUtils(object):
+    def __init__(self, max_words_amount = 0.0):
+        self.max_words_amount = max_words_amount
+        self.lower_boundary_count = 2
+        self.upper_boundary_probability = 0.6
+        self.min_chars = 3
 
-    NOTICE:
-    We have to pad each sequence to reach 'max_seq_len' for TensorFlow
-    consistency (we cannot feed a numpy array with unconsistent
-    dimensions). The dynamic calculation will then be perform thanks to
-    'seqlen' attribute that records every actual sequence length.
-    """
-    def __init__(self, n_samples=1000, max_seq_len=20, min_seq_len=3,
-                 max_value=1000):
+    def count_meaningful_words(self, texts):
+        word_appearance, text_word_count = self._count_words_many(texts)
+        word_list = self._get_word_list(word_appearance, len(texts))
+
+        return self._create_matrix(text_word_count, word_list)
+
+    def _create_matrix(self, rows, column_names):
+        matrix = []
+        for row in rows:
+            row_dict = {}
+            for column_name in column_names:
+                row_dict[column_name] = row[column_name] if column_name in row else 0
+            matrix.append(row_dict)
+        return matrix
+
+    def _count_words_many(self, texts):
+        word_count_by_text = []
+        word_appearance = {}
+
+        for text in texts:
+            text_word_count = self._count_words(text)
+            word_count_by_text.append(text_word_count)
+
+            for word, count in text_word_couna.keys():
+                word_appearance.setdefault(word, 0)
+                word_appearance[word] += 1
+
+        return words_appearance, text_word_count
+
+    def _count_words(self, text):
+        words = self._get_words(text)
+
+        result = {}
+        for word in words:
+            result.setdefault(word, 0)
+            result[word] += 1
+
+        return result
+
+    def _get_words(self, text):
+        txt = re.compile(r'<[^>]+>').sub('', text)
+        words = re.compile(r'[^a-z^a-z]+').split(txt)
+        return list(filter(one, map(str.lower, words)))
+
+    def _word_appearance_check(self, texts_count):
+        probability = float(app_count) / texts_count
+        lower_boundary_probability = self.lower_boundary_count / texts_count
+        upper_boundary_probability = self.upper_boundary_probability
+
+        return (probability > lower_boundary_probability
+                and probability < upper_boundary_probability)
+
+    def _word_chars_check(self, word):
+        return len(word) >= self.min_chars
+
+    def _get_word_list(self, words_appearance, texts_count):
+        if texts_count <= 1:
+            return list(words_appearance.keys())
+
+        white_list = []
+        black_list = []
+        for word, app_count in words_appearance.items():
+            if self._word_appearance_check(app_count, texts_count) and self._word_chars_check(word):
+                white_list.append(word)
+            else:
+                log("black : " + word + " : " + str(probability) + ", from:" + texts_count)
+
+        return white_list
+
+
+class NeuralNetwork(object):
+    default_config = {
+        "learning_rate": 0.01,
+        "training_iters" : 1000 * 1000,
+        "batch_size" : 128,
+        "learn_heardbeat_interval" : 10,
+        "feature_max_len" : 20000,
+        "n_hidden" : 128,
+        "n_classes" : 2
+    }
+
+    def get_configuration(self, config):
+        cfg = {}
+        for name, value in default_config.items():
+            cfg[name] = config.get(name, value)
+        return cfg
+
+    def __init__(self, config):
+        self.__config = self.get_configuration(config)
+
+    def learn(self, texts, lables):
+        words_count_by_text, words_appearance
+
+    def predict(self, text):
+
+
+trainset = GetSequenceData(max_lengs=seq_max_len)
+testset = GetSequenceData(max_lengs=seq_max_len, trainset=False)
+
+seq_max_len = trainset.max_lengs# Sequence max length
+log(seq_max_len)
+# tf Graph input
+x = tf.placeholder("float", [None, seq_max_len, 1])
+y = tf.placeholder("float", [None, n_classes])
+# A placeholder for indicating each sequence length
+seqlen = tf.placeholder(tf.int32, [None])
+
+# Define weights
+weights = {
+    'out': tf.Variable(tf.random_normal([n_hidden, n_classes]))
+}
+biases = {
+    'out': tf.Variable(tf.random_normal([n_classes]))
+}
+
+class DataProvider(object):
+    def _read(self):
+        with open(file_name, 'r') as file:
+            lines = file.readlines()
+            idx = 0
+            texts = []
+            labels = []
+            if self.first:
+                lines = lines[0:int(len(lines) * self.amount) - 1]
+            else:
+                liens = lines[int(len(lines) * self.amount):0]
+
+            for line in lines:
+                text_with_lable = line.strip().split('\t')
+
+                texts.append(text_with_lable[0].strip())
+                label = int(p[1] == "positive")
+                labels.append([label, abs(label - 1)])
+        return texts, labels
+
+
+    def __init__(self, first=True, amount=1.0):
         self.data = []
         self.labels = []
-        self.seqlen = []
-        for i in range(n_samples):
-            # Random sequence length
-            len = random.randint(min_seq_len, max_seq_len)
-            # Monitor sequence length for TensorFlow dynamic calculation
-            self.seqlen.append(len)
-            # Add a random or linear int sequence (50% prob)
-            if random.random() < .5:
-                # Generate a linear sequence
-                rand_start = random.randint(0, max_value - len)
-                s = [[float(i)/max_value] for i in
-                     range(rand_start, rand_start + len)]
-                # Pad sequence for dimension consistency
-                s += [[0.] for i in range(max_seq_len - len)]
-                self.data.append(s)
-                self.labels.append([1., 0.])
-            else:
-                # Generate a random sequence
-                s = [[float(random.randint(0, max_value))/max_value]
-                     for i in range(len)]
-                # Pad sequence for dimension consistency
-                s += [[0.] for i in range(max_seq_len - len)]
-                self.data.append(s)
-                self.labels.append([0., 1.])
         self.batch_id = 0
+        self.first = first
+        self.amount = amount
+        self.file_name = "Sentiment140.tenPercent.sample.tweets.tsv"
+        self.data, self.labels = self._read()
 
     def next(self, batch_size):
         """ Return a batch of data. When dataset end is reached, start over.
         """
         if self.batch_id == len(self.data):
             self.batch_id = 0
-        batch_data = (self.data[self.batch_id:min(self.batch_id +
-                                                  batch_size, len(self.data))])
-        batch_labels = (self.labels[self.batch_id:min(self.batch_id +
-                                                  batch_size, len(self.data))])
-        batch_seqlen = (self.seqlen[self.batch_id:min(self.batch_id +
-                                                  batch_size, len(self.data))])
+        batch_data = (self.data[self.batch_id:min(self.batch_id + batch_size, len(self.data))])
+        batch_labels = (self.labels[self.batch_id:min(self.batch_id + batch_size, len(self.data))])
         self.batch_id = min(self.batch_id + batch_size, len(self.data))
-        return batch_data, batch_labels, batch_seqlen
+        return batch_data, batch_labels
 
 
 # ==========
@@ -82,15 +193,16 @@ learning_rate = 0.01
 training_iters = 1000000
 batch_size = 128
 display_step = 10
-
+seq_max_len = 400
 # Network Parameters
-seq_max_len = 20 # Sequence max length
-n_hidden = 64 # hidden layer num of features
+n_hidden = 128 # hidden layer num of features
 n_classes = 2 # linear sequence or not
 
-trainset = ToySequenceData(n_samples=1000, max_seq_len=seq_max_len)
-testset = ToySequenceData(n_samples=500, max_seq_len=seq_max_len)
+trainset = GetSequenceData(max_lengs=seq_max_len)
+testset = GetSequenceData(max_lengs=seq_max_len, trainset=False)
 
+seq_max_len = trainset.max_lengs# Sequence max length
+log(seq_max_len)
 # tf Graph input
 x = tf.placeholder("float", [None, seq_max_len, 1])
 y = tf.placeholder("float", [None, n_classes])
@@ -169,9 +281,8 @@ with tf.Session() as sess:
     # Keep training until reach max iterations
     while step * batch_size < training_iters:
         batch_x, batch_y, batch_seqlen = trainset.next(batch_size)
+
         # Run optimization op (backprop)
-        print(batch_x)
-        print(batch_y)
         sess.run(optimizer, feed_dict={x: batch_x, y: batch_y,
                                        seqlen: batch_seqlen})
         if step % display_step == 0:
