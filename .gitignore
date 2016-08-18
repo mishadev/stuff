@@ -1,3 +1,9 @@
 *.png
 *.pyc
 *~
+*.swp
+*.swo
+*.csv
+*.data.json
+*.ckpt
+checkpoint

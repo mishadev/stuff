@@ -1,3 +1,4 @@
+import codecs
 import re
 import nltk
 from nltk.util import ngrams
@@ -13,7 +14,7 @@ class FeatureHasher:
         self.use_single_words = use_single_words
         self.use_pos_tag = use_pos_tag
         self.lexicon_words = None
-        self.file_name = "subjclueslen1-HLTEMNLP05.tff"
+        self.file_name = "./data/subjclueslen1-HLTEMNLP05.tff"
         self.not_re = re.compile("([^\w]|^)(no(t)?)([^\w]|$)", re.VERBOSE | re.I | re.UNICODE)
         self.nt_re = re.compile("([\w]+n't)([^\w]|$)", re.VERBOSE | re.I | re.UNICODE)
 
@@ -75,7 +76,7 @@ class FeatureHasher:
         return tokens
 
     def _read(self):
-        with open(self.file_name, 'r') as file:
+        with codecs.open(self.file_name, 'r') as file:
             lines = file.readlines()
             words = {}
 

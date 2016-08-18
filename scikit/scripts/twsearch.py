@@ -80,7 +80,7 @@ def write_to_file(file_name, word_list, word_count_by_author):
     log("words:%s" % len(word_list))
     log("authors:%s" % len(word_count_by_author))
 
-    with open(file_name,'w') as file:
+    with codecs.open(file_name, 'w', 'utf-8') as file:
         file.write('tweets')
         for word in word_list:
             file.write('\t%s' % word)
@@ -138,13 +138,13 @@ def run():
     write_to_file("words.txt", word_list, word_count_by_author)
 
 def read_data(file_name):
-    with open(file_name, 'r') as file:
+    with codecs.open(file_name, 'r') as file:
         data = json.loads(file.read())
         log(data)
         return data
 
 def write_data(file_name, data):
-    with open(file_name, 'w') as file:
+    with codecs.open(file_name, 'w') as file:
         file.write(json.dumps(data, indent=4))
 
 

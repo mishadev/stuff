@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker exec -it tansor bash
+docker exec -it tensor bash

@@ -9,6 +9,7 @@ Author: Aymeric Damien
 Project: https://github.com/aymericdamien/TensorFlow-Examples/
 '''
 
+import codecs
 import tensorflow as tf
 import random
 
@@ -121,9 +122,6 @@ class NeuralNetwork(object):
     def learn(self, texts, lables):
         words_count_by_text, words_appearance
 
-    def predict(self, text):
-
-
 trainset = GetSequenceData(max_lengs=seq_max_len)
 testset = GetSequenceData(max_lengs=seq_max_len, trainset=False)
 
@@ -145,7 +143,7 @@ biases = {
 
 class DataProvider(object):
     def _read(self):
-        with open(file_name, 'r') as file:
+        with codecs.open(file_name, 'r') as file:
             lines = file.readlines()
             idx = 0
             texts = []

@@ -87,7 +87,7 @@ class TwetterDataProvider(object):
         self.labels = labels
 
     def _read(self):
-        with open(self.file_name, 'r') as file:
+        with codecs.open(self.file_name, 'r') as file:
             lines = file.readlines()
             idx = 0
             texts = []

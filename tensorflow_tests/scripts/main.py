@@ -1,3 +1,5 @@
+import numpy as np
+import codecs
 import sys
 import logging
 from nns import RecurrentNN
@@ -14,7 +16,7 @@ dataset_builder = DatasetBuilder(
         use_single_words=True,
         use_lexicon_features=True)
 
-data_provider = TwitterTrainingDataProvider(amount=0.1)
+data_provider = TwitterTrainingDataProvider(amount=1.0)
 texts, labels = data_provider.read()
 features_list, features, labels_list, labels = dataset_builder.build_labeled_dataset(texts, labels)
 timer.checkin("end_getting_training_data")
@@ -44,17 +46,20 @@ api_tweet_provider = TwitterApiDataProvider(
         access_secret='OEjieKwOLdXwSpss1DmNzLyucBfre3oWuKK1JNdD5wwC9')
 
 tweets = api_tweet_provider.read("dreamhost")
-features_list, features_matrix, unclassifiable_texts_ids = (
-        dataset_builder.build_dataset(features_list, tweets))
-prediction = nn.predict(features_matrix)
-score_matrix = []
-score_labels = []
-pred_idx = 0
-for idx in range(0, tweets):
-    score_labels.append(tweets[idx])
-    if idx in unclassifiable_texts_ids:
-        score_matrix.append([0, 0])
-    else:
-        score_matrix.append(prediction[pred_id])
+features_list, features_matrix, unclassifiable, labels_list = (
+        dataset_builder.build_dataset(features_list[:-2], tweets))
+if len(features_matrix):
+    prediction = nn.predict(features_matrix)
 
+with codecs.open("./predictions/prediction.csv", "w", "utf-8") as file:
+    file.write('tweets')
+    for label in labels_list:
+        file.write('\t%s' % label)
+    file.write('\n')
+
+    for idx in range(0, len(prediction)):
+        file.write(tweets[idx].encode('ascii', 'ignore'))
+        for value in prediction[idx]:
+            file.write('\t{:.6f}'.format(value))
+        file.write('\n')
 

@@ -1,3 +1,4 @@
+import codecs
 import unittest
 import numpy as np
 from dataproviders import TwetterDataProvider, TextAnalizer, TokensFilter, BatchDataReader
